@@ -26,6 +26,16 @@ public class GameEngine {
 	public static final String COMMAND_MAINMENU_START = "start";
 	/**
      * Command avaliable in mainmenu.
+	 * Loads player data from file.
+     */
+	public static final String COMMAND_MAINMENU_LOAD = "load";
+	/**
+     * Command avaliable in mainmenu.
+	 * Saves player data to file.
+     */
+	public static final String COMMAND_MAINMENU_SAVE = "save";
+	/**
+     * Command avaliable in mainmenu.
 	 * Creates or shows Player in GameEngine.
      */
 	public static final String COMMAND_MAINMENU_PLAYER = "player";
@@ -109,7 +119,8 @@ public class GameEngine {
 	 */
 	private void getCommand(){
 		String command = promptGet(SIGN_PROMPT);
-		switch(command){
+		String[] commandargs = command.split(" ");
+		switch(commandargs[0]){
 			case COMMAND_MAINMENU_HELP:
 				displayHelpText();
 				break;
@@ -117,7 +128,13 @@ public class GameEngine {
 				dispalyCommands();
 				break;
 			case COMMAND_MAINMENU_START:
-				startGame();
+				startGame(commandargs);
+				break;
+			case COMMAND_MAINMENU_SAVE:
+				savePlayer();
+				break;
+			case COMMAND_MAINMENU_LOAD:
+				loadPlayer();
 				break;
 			case COMMAND_MAINMENU_PLAYER:
 				genPlayer();
@@ -137,24 +154,25 @@ public class GameEngine {
 	/**
 	 *  Starts a game with player and monster healed
 	 */
-	private void startGame(){
+	private void startGame(String[] commandargs){
 		//prepare player and monster
 		if(player == null){
 			promptPressReturn("No player found, please create a player with 'player' first.\n");
 			return;
 		}
-		if(monster == null){
-			promptPressReturn("No monster found, please create a monster with 'monster' first.\n");
-			return;
-		}
+
 		player.setCurrentHealth(player.getMaxHealth());
-		monster.setCurrentHealth(monster.getMaxHealth());
+		if(monster != null){
+			monster.setCurrentHealth(monster.getMaxHealth());
+		}
 
 		//create world obj or reset
 		if(world == null){
-			world = new World(player.getName(), monster.getName());
+			//world = new World(player.getName(), monster.getName());
 		}
-		world.reset(player.getName(), monster.getName());
+
+		player.reposition();
+		monster.reposition();
 
 		// Runs one round of game in this infinite loop, till get "home" command or enter battle.
 		while(true){
@@ -166,7 +184,8 @@ public class GameEngine {
 					return;
 				default:
 					world.movePlayer(command);
-					if(world.encounter()){
+					//world.encounter()
+					if(false){
 						battle();
 						promptPressReturn("");
 						return;
@@ -198,6 +217,19 @@ public class GameEngine {
 			System.out.println();
 		}
 	}
+
+	private void savePlayer(){
+		if(player == null){
+			System.err.println("No player data to save.\n");
+			return;
+		}
+		player.save();
+	}
+	//load to override; heal
+	private void loadPlayer(){
+		player = Player.load();
+	}
+
 	/**
 	 * Generates a Player object or show Player's name, level, damage, health if Player exists.
 	 *
