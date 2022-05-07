@@ -50,6 +50,29 @@ public abstract class Unit extends Entity{
         System.out.printf("%s attacks %s for %d damage.\n", getName(), another.getName(), getDamage());//use getDamage() instead of damageIncured.
     }
 
+    /**
+	 * Logics for battle loop, player and monster take turns to attack.
+	 * @see Unit#attack()
+	 */
+	public void battle(Unit another){
+		System.out.printf("%s encounterd a %s\n\n", getName(), another.getName());
+		while(true){
+			System.out.println(getName() + " " + getCurrentHealth() + "/" + getMaxHealth()
+			+ " | " + another.getName() + " " + another.getCurrentHealth() + "/" + another.getMaxHealth());
+			attack(another);
+			if(another.getCurrentHealth() <= 0){
+				System.out.printf("%s wins!\n", getName());
+				return;
+			}
+			another.attack(this);
+			if(getCurrentHealth() <= 0){
+				System.out.printf("%s wins!\n", another.getName());
+				return;
+			}
+			System.out.println();
+		}
+	}
+
     public void move(String key) throws Exception{
         switch(key){
             case GameEngine.COMMAND_MAP_UP:

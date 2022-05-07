@@ -154,25 +154,44 @@ public class GameEngine {
 	/**
 	 *  Starts a game with player and monster healed
 	 */
-	private void startGame(String[] commandargs){
+	private void startGame(String[] commandargs) throws IllegalArgumentException{
+		if(commandargs.length > 2){
+			throw new IllegalArgumentException("Received " + commandargs.length + "args, expecting 1 or 2.");
+		}
 		//prepare player and monster
 		if(player == null){
 			promptPressReturn("No player found, please create a player with 'player' first.\n");
 			return;
 		}
 
-		player.setCurrentHealth(player.getMaxHealth());
-		if(monster != null){
-			monster.setCurrentHealth(monster.getMaxHealth());
+		//create world from .dat or nothing
+		//reset world
+		if(commandargs.length == 2){
+			try{
+				Scanner inputStream = World.load(commandargs[1]);
+	            world = new World(inputStream);
+	        }
+	        catch(Exception e){
+	            System.out.println(e.getMessage());
+	        }
+
 		}
 
-		//create world obj or reset
 		if(world == null){
-			//world = new World(player.getName(), monster.getName());
+			world = new World();
+
+		}
+		world.register(player);
+		//doesn't harm to register null
+		world.register(monster);
+
+		player.heal();
+		player.reposition();
+		if(monster != null){
+			monster.heal();
+			monster.reposition();
 		}
 
-		player.reposition();
-		monster.reposition();
 
 		// Runs one round of game in this infinite loop, till get "home" command or enter battle.
 		while(true){
@@ -186,35 +205,11 @@ public class GameEngine {
 					world.movePlayer(command);
 					//world.encounter()
 					if(false){
-						battle();
+
 						promptPressReturn("");
 						return;
 					}
 			}
-
-
-		}
-	}
-	/**
-	 * Logics for battle loop, player and monster take turns to attack.
-	 * @see Avatar#attack()
-	 */
-	private void battle(){
-		System.out.printf("%s encounterd a %s\n\n", player.getName(), monster.getName());
-		while(true){
-			System.out.println(player.getName() + " " + player.getCurrentHealth() + "/" + player.getMaxHealth()
-			+ " | " + monster.getName() + " " + monster.getCurrentHealth() + "/" + monster.getMaxHealth());
-			player.attack(monster);
-			if(monster.getCurrentHealth() <= 0){
-				System.out.printf("%s wins!\n", player.getName());
-				return;
-			}
-			monster.attack(player);
-			if(player.getCurrentHealth() <= 0){
-				System.out.printf("%s wins!\n", monster.getName());
-				return;
-			}
-			System.out.println();
 		}
 	}
 

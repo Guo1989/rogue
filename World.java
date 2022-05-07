@@ -27,6 +27,9 @@ public class World{
      */
     public static final int WORLD_DEFAULT_HEIGHT = 4;
 
+    public static final int WORLD_MIN_X = 0;
+    public static final int WORLD_MIN_Y = 0;
+
     public static final int PLAYER_DEFAULT_X = 1;
     public static final int PLAYER_DEFAULT_Y = 1;
     public static final int MONSTER_DEFAULT_Y = 2;
@@ -36,11 +39,20 @@ public class World{
     private int width;
     private int height;
     private String[] map;
-    //also in entityList[0]
-    private Player player;
+    private Integer playerX;
+    private Integer playerY;
 
+    public World(){
+        width = WORLD_DEFAULT_WIDTH;
+        height = WORLD_DEFAULT_HEIGHT;
+        map = new String[WORLD_DEFAULT_HEIGHT];
+        for(int l = 0; l < WORLD_DEFAULT_HEIGHT; l++){
+            //possibly throws NoSuchElementException
+            map[l] = ".".repeat(WORLD_DEFAULT_WIDTH);
+        }
+    }
 
-    public World(Scanner inputStream, Player player) throws NoSuchElementException, ArrayIndexOutOfBoundsException, IllegalArgumentException, NullPointerException, Exception{
+    public World(Scanner inputStream) throws NoSuchElementException, ArrayIndexOutOfBoundsException, IllegalArgumentException, NullPointerException{
         width = inputStream.nextInt();
         height = inputStream.nextInt();
         inputStream.nextLine();
@@ -59,15 +71,15 @@ public class World{
             entityArgs = inputStream.nextLine().split(" ");
             //possibly throws ArrayIndexOutOfBoundsException
             //todo parseInt, parsexxx
+            //todo add monster when list is empty
             switch(entityArgs[0]){
                 case "player":
-                    //register Player and set coordinates
-                    registerPlayer(player);
-                    player.setX(Integer.parseInt(entityArgs[1]));
-                    player.setY(Integer.parseInt(entityArgs[2]));
+                    //reserve coordinates for register Player
+                    playerX = Integer.parseInt(entityArgs[1]);
+                    playerY = Integer.parseInt(entityArgs[2]);
                     break;
                 case "monster":
-                    entityList.add(1, new Monster(entityArgs[3], Integer.parseInt(entityArgs[1]), Integer.parseInt(entityArgs[2]), Integer.parseInt(entityArgs[4]), Integer.parseInt(entityArgs[5])));
+                    entityList.add(new Monster(entityArgs[3], Integer.parseInt(entityArgs[1]), Integer.parseInt(entityArgs[2]), Integer.parseInt(entityArgs[4]), Integer.parseInt(entityArgs[5])));
                     break;
                 case "item":
                     //possibly throws IllegalArgumentException, NullPointerException
@@ -75,14 +87,30 @@ public class World{
                     break;
                 default:
                     //todo
-                    throw new Exception("entityArg[0] not recognized: " + entityArgs[0]);
+                    //throw new Exception("entityArg[0] not recognized: " + entityArgs[0]);
             }
         }
     }
-    //register Player from GameEngine
-    private void registerPlayer(Player player){
-        this.player = player;
-        entityList.addFirst(player);
+    //register Player from GameEngine, set coordinates if loaded from level data.
+    public void register(Entity entity){
+        if(entity == null){
+            return;
+        }
+        if(entity.getClass() == Player.class){
+            Player player = (Player) entity;
+            entityList.addFirst(player);
+            if(playerX != null){
+                player.setX(playerX);
+                player.setY(playerY);
+            }
+        }
+        else if(entity.getClass() == Monster.class){
+            Monster monster = (Monster) entity;
+            entityList.add(1, monster);
+        }
+        else if(entity.getClass() == Item.class){
+            entityList.add(entity);
+        }
     }
 
     /**
@@ -90,9 +118,6 @@ public class World{
      * @param playerName    name String of player
      * @param monsterName   name String of monster
      */
-     //todo: backward compatibility
-    //public World(String playerName, String monsterName){
-    //}
 
 
 
@@ -114,9 +139,15 @@ public class World{
      * Visually renders the game world map.
      */
     public void render(){
+        StringBuilder[] entityMap = new StringBuilder[height];
         for(int y = 0; y < height; y++){
-
-            System.out.println(map[y]);
+            entityMap[y] = new StringBuilder(map[y]);
+        }
+        for(Entity e: entityList){
+            entityMap[e.getY()].setCharAt(e.getX(), e.render().charAt(0));
+        }
+        for(int y = 0; y < height; y++){
+            System.out.println(entityMap[y]);
         }
     }
     /**
@@ -124,21 +155,46 @@ public class World{
      * @param command   A String as command to move, can be "w" "a" "s" "d"
      */
     public void movePlayer(String command){
+        Player player = (Player) entityList.getFirst();
         switch(command){
             case GameEngine.COMMAND_MAP_UP:
-
+                if(player.getY() == WORLD_MIN_Y){
+                    return;
+                }
+                if(map[player.getY() - 1].charAt(player.getX()) == '.'){
+                    player.setY(player.getY() - 1);
+                }
                 break;
             case GameEngine.COMMAND_MAP_DOWN:
-
+                if(player.getY() == height - 1){
+                    return;
+                }
+                if(map[player.getY() + 1].charAt(player.getX()) == '.'){
+                    player.setY(player.getY() + 1);
+                }
                 break;
             case GameEngine.COMMAND_MAP_LEFT:
-
+                if(player.getX() == WORLD_MIN_X){
+                    return;
+                }
+                if(map[player.getY()].charAt(player.getX() - 1) == '.'){
+                    player.setX(player.getX() - 1);
+                }
                 break;
             case GameEngine.COMMAND_MAP_RIGHT:
-
+                if(player.getX() == width - 1){
+                    return;
+                }
+                if(map[player.getY()].charAt(player.getX() + 1) == '.'){
+                    player.setX(player.getX() + 1);
+                }
                 break;
             default:
                 //System.out.println("World.move(): command not recognized");
         }
+    }
+
+    public void encounter(){
+
     }
 }
