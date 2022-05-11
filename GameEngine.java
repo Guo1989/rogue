@@ -162,7 +162,11 @@ public class GameEngine {
 		if(player == null){
 			promptPressReturn("No player found, please create a player with 'player' first.\n");
 			return;
+		}else if(commandargs.length == 1 && monster == null){
+			promptPressReturn("No monster found, please create a monster with 'monster' first.\n");
+			return;
 		}
+
 
 		//create world from .dat or nothing
 		//reset world
@@ -187,6 +191,7 @@ public class GameEngine {
 
 		player.heal();
 		player.reposition();
+		player.setPerk(0);
 		if(monster != null){
 			monster.heal();
 			monster.reposition();
@@ -203,9 +208,9 @@ public class GameEngine {
 					return;
 				default:
 					world.movePlayer(command);
-					//world.encounter()
-					if(false){
-
+					world.scanEncounter();
+					//or is dead
+					if(world.isCompleted()){
 						promptPressReturn("");
 						return;
 					}

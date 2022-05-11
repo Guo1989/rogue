@@ -2,6 +2,7 @@ package rogue;
 
 import java.util.LinkedList;
 import java.util.Scanner;
+import java.util.Iterator;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.io.FileNotFoundException;
@@ -39,13 +40,16 @@ public class World{
     private int width;
     private int height;
     private String[] map;
+    //only temporarily store x, y, foring decouping world creation and player creation.
     private Integer playerX;
     private Integer playerY;
+    private boolean completed;
 
     public World(){
         width = WORLD_DEFAULT_WIDTH;
         height = WORLD_DEFAULT_HEIGHT;
         map = new String[WORLD_DEFAULT_HEIGHT];
+        entityList = new LinkedList<Entity>();
         for(int l = 0; l < WORLD_DEFAULT_HEIGHT; l++){
             //possibly throws NoSuchElementException
             map[l] = ".".repeat(WORLD_DEFAULT_WIDTH);
@@ -109,7 +113,11 @@ public class World{
             entityList.add(1, monster);
         }
         else if(entity.getClass() == Item.class){
+            Item item = (Item) entity;
             entityList.add(entity);
+            if(item.itemType == Item.Type.WARP_STONE){
+                completed = false;
+            }
         }
     }
 
@@ -194,7 +202,34 @@ public class World{
         }
     }
 
-    public void encounter(){
+    public void scanEncounter(){
+        Iterator<Entity> iterator = entityList.iterator();
+        Player player = (Player) iterator.next();
 
+        while( iterator.hasNext()) {
+            Entity e = iterator.next();
+            if(player.encounter(e) && e.getClass() == Item.class){
+                Item item = (Item) e;
+                player.pickUp( (Item) e);
+                if(item.itemType == Item.Type.WARP_STONE){
+                    completed = true;
+                }
+                iterator.remove();
+            }
+            else if(player.encounter(e) && e.getClass() == Monster.class){
+                player.battle( (Monster) e);
+                if(player.getCurrentHealth() <= 0){
+                    completed = true;
+                }
+                //defeated a Monster
+                else{
+                    iterator.remove();
+                }
+            }
+        }
+    }
+
+    public boolean isCompleted(){
+        return completed;
     }
 }

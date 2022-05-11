@@ -12,7 +12,9 @@ import java.io.FileNotFoundException;
  */
 public class Player extends Unit{
     public static final String PLAYER_FILE_NAME = "player.dat";
-    private static final int PLAYER_BASE_LEVEL = 1;
+    public static final int PLAYER_BASE_LEVEL = 1;
+    public static final int PLAYER_BASE_HEALTH = 17;
+    public static final int PLAYER_HEALTH_GAIN_SCALE = 3;
     private int level;
     private int perk;
 
@@ -24,7 +26,7 @@ public class Player extends Unit{
         super(name, World.PLAYER_DEFAULT_X, World.PLAYER_DEFAULT_Y);
         setLevel(PLAYER_BASE_LEVEL);
         heal();
-        perk = 0;
+        setPerk(0);
     }
     /**
      * Constructs a player of certain level with name.
@@ -36,7 +38,7 @@ public class Player extends Unit{
         super(name, World.PLAYER_DEFAULT_X, World.PLAYER_DEFAULT_Y);
         setLevel(level);
         heal();
-        perk = 0;
+        setPerk(0);
     }
 
     public void setPerk(int perk){
@@ -59,7 +61,7 @@ public class Player extends Unit{
      * @return maximum Health based on level
      */
     public int getMaxHealth(){
-        return 17 + 3 * getLevel();
+        return PLAYER_BASE_HEALTH + PLAYER_HEALTH_GAIN_SCALE * getLevel();
     }
     /**
      * @return damage based on level.
@@ -83,11 +85,10 @@ public class Player extends Unit{
                 break;
             case WARP_STONE:
                 level++;
+                //todo heal after level up?
                 System.out.println("World complete! (You leveled up!)");
                 break;
         }
-
-
     }
 
     public void save(){
@@ -103,6 +104,7 @@ public class Player extends Unit{
 
     }
 
+    @Override
     public String render(){
         return getName().toUpperCase().substring(0, 1);
     }
@@ -125,7 +127,8 @@ public class Player extends Unit{
             return null;
         }
     }
-
+    //todo deprecated
+    //@Override
     public void reposition(){
         setX(World.PLAYER_DEFAULT_X);
         setY(World.PLAYER_DEFAULT_Y);
