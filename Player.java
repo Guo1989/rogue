@@ -15,6 +15,7 @@ public class Player extends Unit{
     public static final int PLAYER_BASE_LEVEL = 1;
     public static final int PLAYER_BASE_HEALTH = 17;
     public static final int PLAYER_HEALTH_GAIN_SCALE = 3;
+    public static final int PLAYER_BASE_DAMAGE = 1;
     private int level;
     private int perk;
 
@@ -67,7 +68,7 @@ public class Player extends Unit{
      * @return damage based on level.
      */
     public int getDamage(){
-        return getLevel() + perk + 1;
+        return getLevel() + perk + PLAYER_BASE_DAMAGE;
     }
 
     public void pickUp(Item item){

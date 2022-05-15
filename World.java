@@ -152,54 +152,123 @@ public class World{
             entityMap[y] = new StringBuilder(map[y]);
         }
         for(Entity e: entityList){
-            entityMap[e.getY()].setCharAt(e.getX(), e.render().charAt(0));
+            //render entity added first, also only in traversable cells.
+            //so render if it's a '.' cell.
+            if(entityMap[e.getY()].charAt(e.getX()) == '.'){
+                entityMap[e.getY()].setCharAt(e.getX(), e.render().charAt(0));
+            }
+
         }
         for(int y = 0; y < height; y++){
             System.out.println(entityMap[y]);
         }
+        System.out.println();
     }
+
+    public void moveMonsters(){
+        Iterator<Entity> iterator = entityList.iterator();
+        Entity player = iterator.next();//first is player
+
+        while( iterator.hasNext()){
+            Entity monster = iterator.next();
+            if(monster.getClass() != Monster.class){
+                return;
+            }
+            int mX = monster.getX();
+            int mY = monster.getY();
+            int pX = player.getX();
+            int pY = player.getY();
+            if ((mX - pX > 2) || (mX - pX < -2) ){
+                continue;
+            }
+            if ((mY - pY > 2) || (mY - pY < -2) ){
+                continue;
+            }
+            int mXNext = mX;
+            int mYNext = mY;
+            String cmdX = "";
+            String cmdY = "";
+            //cannot use ternary operator.
+            if(mX < pX){
+                mXNext = mX + 1;
+                cmdX = GameEngine.COMMAND_MAP_RIGHT;
+            }
+            else if(pX < mX){
+                mXNext = mX - 1;
+                cmdX = GameEngine.COMMAND_MAP_LEFT;
+            }
+            if(mY < pY){
+                mYNext = mY + 1;
+                cmdY = GameEngine.COMMAND_MAP_DOWN;
+            }
+            else if(pY < mY){
+                mYNext = mY - 1;
+                cmdY = GameEngine.COMMAND_MAP_UP;
+            }
+            if(traversable(mXNext, mY) && mX != pX){
+                move(monster, cmdX);
+            }
+            else if(traversable(mX, mYNext)){
+                move(monster, cmdY);
+            }
+        }
+    }
+
     /**
      * A wrapper to call player's move, taking account of the size of map.
      * @param command   A String as command to move, can be "w" "a" "s" "d"
      */
     public void movePlayer(String command){
         Player player = (Player) entityList.getFirst();
+        move(player, command);
+    }
+
+    private void move(Entity e, String command){
         switch(command){
             case GameEngine.COMMAND_MAP_UP:
-                if(player.getY() == WORLD_MIN_Y){
+                if(e.getY() == WORLD_MIN_Y){
                     return;
                 }
-                if(map[player.getY() - 1].charAt(player.getX()) == '.'){
-                    player.setY(player.getY() - 1);
+                if( traversable(e.getX(), e.getY() - 1) ){
+                    e.setY(e.getY() - 1);
                 }
                 break;
             case GameEngine.COMMAND_MAP_DOWN:
-                if(player.getY() == height - 1){
+                if(e.getY() == height - 1){
                     return;
                 }
-                if(map[player.getY() + 1].charAt(player.getX()) == '.'){
-                    player.setY(player.getY() + 1);
+                if( traversable(e.getX(), e.getY() + 1) ){
+                    e.setY(e.getY() + 1);
                 }
                 break;
             case GameEngine.COMMAND_MAP_LEFT:
-                if(player.getX() == WORLD_MIN_X){
+                if(e.getX() == WORLD_MIN_X){
                     return;
                 }
-                if(map[player.getY()].charAt(player.getX() - 1) == '.'){
-                    player.setX(player.getX() - 1);
+                if( traversable(e.getX() - 1, e.getY()) ){
+                    e.setX(e.getX() - 1);
                 }
                 break;
             case GameEngine.COMMAND_MAP_RIGHT:
-                if(player.getX() == width - 1){
+                if(e.getX() == width - 1){
                     return;
                 }
-                if(map[player.getY()].charAt(player.getX() + 1) == '.'){
-                    player.setX(player.getX() + 1);
+                if( traversable(e.getX() + 1, e.getY()) ){
+                    e.setX(e.getX() + 1);
                 }
                 break;
             default:
-                //System.out.println("World.move(): command not recognized");
+                ;
         }
+    }
+    private boolean traversable(int x, int y){
+        if(x < WORLD_MIN_X || x > width - 1 || y < WORLD_MIN_Y || y > height - 1){
+            return false;
+        }
+        if(map[y].charAt(x) == '.'){
+            return true;
+        }
+        return false;
     }
 
     public void scanEncounter(){
@@ -208,7 +277,18 @@ public class World{
 
         while( iterator.hasNext()) {
             Entity e = iterator.next();
-            if(player.encounter(e) && e.getClass() == Item.class){
+            if(player.encounter(e) && e.getClass() == Monster.class){
+                player.battle( (Monster) e);
+                if(player.getCurrentHealth() <= 0){
+                    completed = true;
+                    //todo stop iteration and return
+                }
+                //defeated a Monster
+                else{
+                    iterator.remove();
+                }
+            }
+            else if(player.encounter(e) && e.getClass() == Item.class){
                 Item item = (Item) e;
                 player.pickUp( (Item) e);
                 if(item.itemType == Item.Type.WARP_STONE){
@@ -216,16 +296,7 @@ public class World{
                 }
                 iterator.remove();
             }
-            else if(player.encounter(e) && e.getClass() == Monster.class){
-                player.battle( (Monster) e);
-                if(player.getCurrentHealth() <= 0){
-                    completed = true;
-                }
-                //defeated a Monster
-                else{
-                    iterator.remove();
-                }
-            }
+
         }
     }
 

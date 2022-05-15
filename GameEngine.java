@@ -176,11 +176,14 @@ public class GameEngine {
 	            world = new World(inputStream);
 	        }
 	        catch(Exception e){
-	            System.out.println(e.getMessage());
+				promptPressReturn(e.getMessage() + "\n");
+				return;
 	        }
 
 		}
-
+		if(commandargs.length == 1){
+			world = null;
+		}
 		if(world == null){
 			world = new World();
 
@@ -188,10 +191,11 @@ public class GameEngine {
 		world.register(player);
 		//doesn't harm to register null
 		world.register(monster);
-
 		player.heal();
+		//todo cannot reposition if player has coordinates with .dat
 		player.reposition();
-		player.setPerk(0);
+		//todo review how to reset perk
+		//player.setPerk(0);
 		if(monster != null){
 			monster.heal();
 			monster.reposition();
@@ -207,7 +211,10 @@ public class GameEngine {
 					promptPressReturn("Returning home...\n");
 					return;
 				default:
+					world.moveMonsters();
 					world.movePlayer(command);
+					//battle
+					//pickup
 					world.scanEncounter();
 					//or is dead
 					if(world.isCompleted()){
@@ -335,7 +342,7 @@ public class GameEngine {
 	/**
 	 * Helper function
 	 * Prompts user first,
-	 * then askes user feels like press to return.
+	 * then askes user, feels like press to return.
 	 */
 	private void promptPressReturn(String message){
 		System.out.print(message);

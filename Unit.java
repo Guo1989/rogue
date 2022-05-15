@@ -55,21 +55,24 @@ public abstract class Unit extends Entity{
 	 * @see Unit#attack()
 	 */
 	public void battle(Unit another){
-		System.out.printf("%s encounterd a %s\n\n", getName(), another.getName());
+		System.out.printf("%s encountered a %s!\n\n", getName(), another.getName());
 		while(true){
 			System.out.println(getName() + " " + getCurrentHealth() + "/" + getMaxHealth()
 			+ " | " + another.getName() + " " + another.getCurrentHealth() + "/" + another.getMaxHealth());
 			attack(another);
 			if(another.getCurrentHealth() <= 0){
 				System.out.printf("%s wins!\n", getName());
+                System.out.println();
 				return;
 			}
 			another.attack(this);
 			if(getCurrentHealth() <= 0){
 				System.out.printf("%s wins!\n", another.getName());
+                //todo: not very modularized
+                //System.out.println();
 				return;
 			}
-			System.out.println();
+            System.out.println();
 		}
 	}
 
