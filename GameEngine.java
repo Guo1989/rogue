@@ -1,12 +1,15 @@
 package rogue;
 
 import java.util.Scanner;
+import java.io.PrintStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 /**
  * The engine that drives the whole game, manages the Scanner to read in user input,
- * generates and keeps references to Player and Monster,
- * manages the World object.
+ * Loads data of Player and level.
+ * Manages the World object.
  * @author Xiaocong Zhang xiaocongz@student.unimelb.edu.au 1292460
- *
  */
 public class GameEngine {
 	/**
@@ -154,60 +157,62 @@ public class GameEngine {
 	/**
 	 *  Starts a game with player and monster healed
 	 */
-	private void startGame(String[] commandargs) throws IllegalArgumentException{
+	private void startGame(String[] commandargs) {
+		//Invalid arguments
 		if(commandargs.length > 2){
-			throw new IllegalArgumentException("Received " + commandargs.length + "args, expecting 1 or 2.");
+			promptPressReturn("Received " + commandargs.length + "args, expecting 1 or 2.", System.err);
+			return;
 		}
-		//prepare player and monster
 		if(player == null){
-			promptPressReturn("No player found, please create a player with 'player' first.\n");
+			promptPressReturn("No player found, please create a player with 'player' first.\n", System.err);
 			return;
 		}else if(commandargs.length == 1 && monster == null){
-			promptPressReturn("No monster found, please create a monster with 'monster' first.\n");
+			promptPressReturn("No monster found, please create a monster with 'monster' first.\n", System.err);
 			return;
 		}
 
-
-		//create world from .dat or nothing
-		//reset world
+		//create world from .dat
 		if(commandargs.length == 2){
 			try{
 				Scanner inputStream = World.load(commandargs[1]);
 	            world = new World(inputStream);
 	        }
+			catch(GameLevelNotFoundException e){
+				promptPressReturn("Map not found.\n", System.err);
+				return;
+			}
+			catch(IOException e){
+				promptPressReturn("An error occurred while loading the file.\n", System.err);
+				return;
+			}
 	        catch(Exception e){
-				promptPressReturn(e.getMessage() + "\n");
+				promptPressReturn(e.getMessage(), System.err);
 				return;
 	        }
 
 		}
+		//Or,
+		//create default world
 		if(commandargs.length == 1){
-			world = null;
-		}
-		if(world == null){
+			//possibly delete previous world
 			world = new World();
-
 		}
+		//heal and reposition in registration
 		world.register(player);
-		//doesn't harm to register null
-		world.register(monster);
-		player.heal();
-		//todo cannot reposition if player has coordinates with .dat
-		player.reposition();
-		//todo review how to reset perk
-		//player.setPerk(0);
+
 		if(monster != null){
-			monster.heal();
-			monster.reposition();
+			world.register(monster);
+			//manully generated monster need reposition since it has no coordinates in .dat file
+			monster.reposition(World.MONSTER_DEFAULT_X, World.MONSTER_DEFAULT_Y);
 		}
 
-
-		// Runs one round of game in this infinite loop, till get "home" command or enter battle.
+		// infinite loop for move and battle
 		while(true){
 			world.render();
 			String command = promptGet(SIGN_PROMPT);
 			switch(command){
 				case COMMAND_MAP_HOME:
+					player.setPerk(0);
 					promptPressReturn("Returning home...\n");
 					return;
 				default:
@@ -216,7 +221,7 @@ public class GameEngine {
 					//battle
 					//pickup
 					world.scanEncounter();
-					//or is dead
+					//mission completed or player dead
 					if(world.isCompleted()){
 						promptPressReturn("");
 						return;
@@ -230,11 +235,25 @@ public class GameEngine {
 			System.err.println("No player data to save.\n");
 			return;
 		}
-		player.save();
+		try{
+			player.save();
+			System.out.println("Player data saved.\n");
+		}
+		catch(FileNotFoundException e){
+            System.err.println("GameEngine#savePlayer() " + e.getMessage());
+        }
 	}
+
 	//load to override; heal
 	private void loadPlayer(){
-		player = Player.load();
+		try{
+			player = Player.load();
+			System.out.println("Player data loaded.\n");
+
+		}
+		catch (FileNotFoundException e) {
+            System.err.println("No player data found.\n");
+        }
 	}
 
 	/**
@@ -346,6 +365,12 @@ public class GameEngine {
 	 */
 	private void promptPressReturn(String message){
 		System.out.print(message);
+		promptGet("\n(Press enter key to return to main menu)\n");
+		displayMainMenu();
+	}
+
+	private void promptPressReturn(String message, PrintStream outputStream){
+		outputStream.print(message);
 		promptGet("\n(Press enter key to return to main menu)\n");
 		displayMainMenu();
 	}
